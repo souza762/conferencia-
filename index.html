@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L2 Veterinários — Dashboard Financeiro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f3ef;--surface:#fff;--surface2:#f0efe9;
+  --border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.14);
+  --text:#1a1a18;--text-muted:#6b6b65;--text-faint:#9e9e96;
+  --blue:#1a56a0;--blue-light:#dbeafe;--blue-mid:#3b82f6;
+  --green:#2d6a1f;--green-light:#dcfce7;--green-mid:#16a34a;
+  --amber:#7c4f0c;--amber-light:#fef3c7;
+  --red:#991b1b;--red-light:#fee2e2;
+  --radius:10px;--radius-lg:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:32px;height:32px;background:var(--text);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--bg);letter-spacing:-.5px}
+.logo-text{font-size:14px;font-weight:500}
+.logo-sub{font-size:11px;color:var(--text-muted)}
+.updated-tag{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;background:var(--surface2);padding:3px 10px;border-radius:20px;border:1px solid var(--border)}
+main{max-width:1200px;margin:0 auto;padding:2rem}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;position:relative;overflow:hidden;animation:fadeUp .3s ease both}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.metric-card.blue::before{background:var(--blue-mid)}
+.metric-card.green::before{background:var(--green-mid)}
+.metric-card.amber::before{background:#f59e0b}
+.metric-card.neutral::before{background:#6b7280}
+.metric-card:nth-child(1){animation-delay:.05s}
+.metric-card:nth-child(2){animation-delay:.10s}
+.metric-card:nth-child(3){animation-delay:.15s}
+.metric-card:nth-child(4){animation-delay:.20s}
+.metric-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px}
+.metric-value{font-size:24px;font-weight:600;line-height:1.1}
+.metric-value.blue{color:var(--blue)}
+.metric-value.green{color:var(--green-mid)}
+.metric-sub{font-size:11px;color:var(--text-faint);margin-top:4px;font-family:'DM Mono',monospace}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;animation:fadeUp .4s ease both}
+.section-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:1rem}
+.legend{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-muted)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.tab-bar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.tab{padding:5px 14px;border:1px solid var(--border-strong);border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--text-muted);transition:all .15s;font-family:'DM Sans',sans-serif}
+.tab:hover{background:var(--surface2);color:var(--text)}
+.tab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.search-wrap{position:relative;margin-bottom:1rem}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-faint)}
+.search{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s,background .15s}
+.search:focus{border-color:var(--blue-mid);background:var(--surface)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border);white-space:nowrap}
+thead th.num{text-align:right}
+tbody tr{transition:background .1s}
+tbody tr:hover td{background:var(--surface2)}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.num{text-align:right;font-family:'DM Mono',monospace;font-size:12px}
+.cod{color:var(--text-faint);font-family:'DM Mono',monospace;font-size:11px}
+.name{max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pos{color:var(--green-mid)}
+.neg{color:var(--red)}
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge-both{background:var(--blue-light);color:var(--blue)}
+.badge-ap{background:var(--amber-light);color:var(--amber)}
+.badge-est{background:var(--green-light);color:var(--green)}
+.empty{text-align:center;padding:2rem;color:var(--text-faint);font-size:13px}
+.error-box{background:var(--red-light);color:var(--red);padding:1.25rem;border-radius:var(--radius);font-size:13px;line-height:1.7}
+.error-box code{background:rgba(0,0,0,.08);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}}
+@media(max-width:600px){.metrics{grid-template-columns:1fr}main{padding:1rem}header{padding:0 1rem}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">L2</div>
+    <div>
+      <div class="logo-text">L2 Comércio e Serviços Veterinários</div>
+      <div class="logo-sub">CNPJ 29.234.302/0001-06 — Dashboard Financeiro</div>
+    </div>
+  </div>
+  <span class="updated-tag" id="updatedTag">carregando…</span>
+</header>
+
+<main id="app"><div style="text-align:center;padding:4rem;color:var(--text-muted)">Carregando dados…</div></main>
+
+<script>
+const BRL = v => v==null ? '—' : 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const getSit = d => (d.ap&&d.est)?'both':d.ap?'ap':'est';
+const COLORS = ['#3b82f6','#16a34a','#f59e0b','#ec4899','#8b5cf6','#06b6d4','#94a3b8'];
+
+let allSuppliers=[], currentFilter='all';
+let barChart, donutAP, donutEst;
+
+function buildApp(){
+  document.getElementById('app').innerHTML=`
+    <div class="metrics">
+      <div class="metric-card blue"><div class="metric-label">Contas a pagar</div><div class="metric-value blue" id="m-ap">—</div><div class="metric-sub" id="m-ap-sub">—</div></div>
+      <div class="metric-card green"><div class="metric-label">Estoque total</div><div class="metric-value green" id="m-est">—</div><div class="metric-sub" id="m-est-sub">—</div></div>
+      <div class="metric-card amber"><div class="metric-label">Diferença Est − Pagar</div><div class="metric-value" id="m-diff">—</div><div class="metric-sub" id="m-diff-sub">—</div></div>
+      <div class="metric-card neutral"><div class="metric-label">Fornecedores</div><div class="metric-value" id="m-total">—</div><div class="metric-sub" id="m-both-sub">—</div></div>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="section-title">Top fornecedores — C. a pagar vs estoque</div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>C. a pagar</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#16a34a"></span>Estoque</span>
+        </div>
+        <div style="position:relative;width:100%;height:320px"><canvas id="barChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="section-title">Distribuição C. a pagar</div>
+        <div style="position:relative;width:100%;height:200px"><canvas id="donutAP"></canvas></div>
+        <div style="margin-top:1.25rem">
+          <div class="section-title">Distribuição estoque</div>
+          <div style="position:relative;width:100%;height:200px"><canvas id="donutEst"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Fornecedores</div>
+      <div class="search-wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search" id="searchInput" placeholder="Buscar por nome ou código…" oninput="renderTable()">
+      </div>
+      <div class="tab-bar">
+        <button class="tab active" onclick="setFilter('all',this)">Todos</button>
+        <button class="tab" onclick="setFilter('both',this)">Ambos</button>
+        <button class="tab" onclick="setFilter('ap',this)">Só C. a pagar</button>
+        <button class="tab" onclick="setFilter('est',this)">Só estoque</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Cód.</th><th>Fornecedor</th>
+            <th class="num">C. a pagar</th><th class="num">Estoque</th>
+            <th class="num">Dif. Est − Pagar</th><th>Situação</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="empty" id="emptyMsg" style="display:none">Nenhum fornecedor encontrado.</div>
+      </div>
+    </div>`;
+}
+
+function renderMetrics(data){
+  const totalAP  = data.total_ap;
+  const totalEst = data.total_est;
+  const nAP   = allSuppliers.filter(d=>d.ap).length;
+  const nEst  = allSuppliers.filter(d=>d.est).length;
+  const nBoth = allSuppliers.filter(d=>d.ap&&d.est).length;
+  const diff  = totalEst - totalAP;
+  document.getElementById('m-ap').textContent      = BRL(totalAP);
+  document.getElementById('m-ap-sub').textContent   = nAP+' fornecedores';
+  document.getElementById('m-est').textContent     = BRL(totalEst);
+  document.getElementById('m-est-sub').textContent  = nEst+' fornecedores';
+  document.getElementById('m-diff').textContent    = (diff>=0?'+':'')+BRL(diff);
+  document.getElementById('m-diff').style.color    = diff>=0?'var(--green-mid)':'var(--red)';
+  document.getElementById('m-diff-sub').textContent = diff>=0?'estoque acima dos boletos':'boletos acima do estoque';
+  document.getElementById('m-total').textContent   = allSuppliers.length;
+  document.getElementById('m-both-sub').textContent = nBoth+' presentes em ambos';
+}
+
+function renderCharts(){
+  const top12=[...allSuppliers].filter(d=>d.ap||d.est)
+    .sort((a,b)=>Math.max(b.ap||0,b.est||0)-Math.max(a.ap||0,a.est||0)).slice(0,12);
+  if(barChart) barChart.destroy();
+  barChart=new Chart(document.getElementById('barChart'),{
+    type:'bar',
+    data:{
+      labels:top12.map(d=>String(d.name).length>18?String(d.name).slice(0,18)+'…':d.name),
+      datasets:[
+        {label:'C. a pagar',data:top12.map(d=>d.ap||0),backgroundColor:'#3b82f6',borderRadius:3,borderSkipped:false},
+        {label:'Estoque',   data:top12.map(d=>d.est||0),backgroundColor:'#16a34a',borderRadius:3,borderSkipped:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+BRL(c.raw)}}},
+      scales:{x:{ticks:{font:{size:10},maxRotation:40,autoSkip:false},grid:{display:false}},
+              y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}}}}
+  });
+  const mkDonut=(id,keyFn,old)=>{
+    const sorted=[...allSuppliers].filter(d=>keyFn(d)>0).sort((a,b)=>keyFn(b)-keyFn(a));
+    const top6=sorted.slice(0,6), others=sorted.slice(6).reduce((s,d)=>s+keyFn(d),0);
+    if(old) old.destroy();
+    return new Chart(document.getElementById(id),{type:'doughnut',
+      data:{labels:[...top6.map(d=>String(d.name).length>22?String(d.name).slice(0,22)+'…':d.name),'Outros'],
+            datasets:[{data:[...top6.map(keyFn),others],backgroundColor:COLORS,borderWidth:2,borderColor:'#fff',hoverOffset:4}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+        plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10,padding:6}},
+                 tooltip:{callbacks:{label:c=>' '+BRL(c.raw)}}}}});
+  };
+  donutAP  = mkDonut('donutAP',  d=>d.ap||0,  donutAP);
+  donutEst = mkDonut('donutEst', d=>d.est||0, donutEst);
+}
+
+function setFilter(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable(){
+  const q=(document.getElementById('searchInput').value||'').toLowerCase();
+  const filtered=allSuppliers.filter(d=>{
+    const sit=getSit(d);
+    return (currentFilter==='all'||currentFilter===sit) &&
+           (!q||String(d.name).toLowerCase().includes(q)||String(d.code).includes(q));
+  });
+  const tbody=document.getElementById('tableBody');
+  const empty=document.getElementById('emptyMsg');
+  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=filtered.map(d=>{
+    const sit=getSit(d);
+    const diff=(d.ap&&d.est)?d.est-d.ap:null;
+    const badge=sit==='both'?'<span class="badge badge-both">Ambos</span>'
+                :sit==='ap'?'<span class="badge badge-ap">Só C. a pagar</span>'
+                :'<span class="badge badge-est">Só estoque</span>';
+    const diffCell=diff!=null
+      ?`<td class="num ${diff>=0?'pos':'neg'}">${BRL(diff)}</td>`
+      :'<td class="num" style="color:var(--text-faint)">—</td>';
+    return `<tr>
+      <td class="cod">${d.code}</td>
+      <td class="name" title="${d.name}">${d.name}</td>
+      <td class="num">${d.ap?BRL(d.ap):'<span style="color:var(--text-faint)">—</span>'}</td>
+      <td class="num">${d.est?BRL(d.est):'<span style="color:var(--text-faint)">—</span>'}</td>
+      ${diffCell}<td>${badge}</td></tr>`;
+  }).join('');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+fetch('data.json?v='+Date.now())
+  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status+' — arquivo data.json não encontrado');return r.json();})
+  .then(json=>{
+    allSuppliers=json.suppliers;
+    const d=new Date(json.updated+'T00:00:00');
+    document.getElementById('updatedTag').textContent=
+      'Atualizado em '+d.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+    buildApp();
+    renderMetrics(json);
+    renderCharts();
+    renderTable();
+  })
+  .catch(err=>{
+    document.getElementById('app').innerHTML=`
+      <div class="error-box">
+        <strong>Não foi possível carregar os dados.</strong><br><br>
+        ${err.message}<br><br>
+        Para gerar o arquivo de dados, execute no terminal:<br>
+        <code>python update.py --boletos seu_arquivo.xlsx --estoque seu_arquivo.xlsx</code><br><br>
+        Depois faça commit e push do <code>data.json</code> gerado para o repositório.
+      </div>`;
+    document.getElementById('updatedTag').textContent='erro ao carregar';
+  });
+</script>
+</body>
+</html>
